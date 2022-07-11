@@ -24,7 +24,7 @@ contract MyToken is ERC1155, Ownable {
         _mint(msg.sender,id,amount,"");
         minted[index]+=amount;
     }
-    function uri(uint256 tokenId,string memory _uri)  public  onlyOwner{
+    function uri1(uint256 tokenId,string memory _uri)  public  onlyOwner{
      
            
       //   string(abi.encodePacked("https://bafybeihd4sxshvvk5b7wjawekvl64grqvxmocqh2l54y2qzppvdhf3enzq.ipfs.nftstorage.link/",
