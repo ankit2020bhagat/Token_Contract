@@ -7,7 +7,7 @@ describe("ERC_20", function () {
         [owner, _to, spender] = await ethers.getSigners();
         getContract = await ethers.getContractFactory("ERC_20");
         deployContract = await getContract.deploy();
-        console.log("Contrct Address :", deployContract.address);
+        console.log("Contract Address :", deployContract.address);
         console.log("Owner Address :", owner.address);
         console.log("Total supply of ERC_20:", await deployContract.totalSupply());
         const ownerBalance = await deployContract.balanceOf(owner.address);
@@ -31,5 +31,17 @@ describe("ERC_20", function () {
         console.log("Spender Balance :",await deployContract.allowance(owner.address,spender.address));
         console.log("Balance of Recepient address", await deployContract.balanceOf(_to.address));
         console.log("Balance of Owner address", await deployContract.balanceOf(owner.address));
+    })
+
+    it("Burning NFT :",async function(){
+        await deployContract._burn(owner.address,20);
+        console.log("Owner Balance ",await deployContract.balanceOf(owner.address));
+    })
+
+    it("Burn NFT using spender",async function(){
+       
+        await deployContract.connect(spender).burnFrom(owner.address,10);
+        console.log("spender Balance :",await deployContract.allowance(owner.address,spender.address));
+        console.log("Owner Balance: ",await deployContract.balanceOf(owner.address));
     })
 });

@@ -13,6 +13,9 @@ contract ERC_20 {
     event Transfer(address to, address from, uint256 tokens);
     event Approve(address tokenOwner, address spender, uint256 tokens);
 
+    ///Not having enough ether
+    error insufficient();
+
     constructor() {
         symbol = "QKC";
         _name = "QuikNode Coin";
@@ -69,10 +72,36 @@ contract ERC_20 {
         uint256 token
     ) external returns (bool) {
         //require(balances[msg.sender] >= token,"not having enough token");
-        require(_allowance[owner][msg.sender] >= token,"not having enough token");
+        require(
+            _allowance[owner][msg.sender] >= token,
+            "not having enough token"
+        );
         balances[owner] -= token;
         _allowance[owner][msg.sender] -= token;
         balances[_to] += token;
         return true;
     }
+
+    function burn(uint256 _amount) external {
+        _burn(msg.sender, _amount);
+    }
+
+    function _burn(address account, uint256 _amount) public {
+        if (_amount >= balances[account]) {
+            revert insufficient();
+        }
+        balances[account] -= _amount;
+        _totalSupply -= _amount;
+        emit Transfer(account, address(0), _amount);
+    }
+
+    function burnFrom(address owner, uint _amount) external {
+        if(_amount>=_allowance[owner][msg.sender]){
+            revert insufficient();
+        }
+        _allowance[owner][msg.sender]-=_amount;
+        _burn(owner, _amount);
+    }
+    
+    
 }
