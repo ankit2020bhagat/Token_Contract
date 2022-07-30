@@ -68,8 +68,8 @@ contract ERC_20 {
         address _to,
         uint256 token
     ) external returns (bool) {
-        require(balances[msg.sender] >= token);
-        require(_allowance[owner][msg.sender] >= token);
+        //require(balances[msg.sender] >= token,"not having enough token");
+        require(_allowance[owner][msg.sender] >= token,"not having enough token");
         balances[owner] -= token;
         _allowance[owner][msg.sender] -= token;
         balances[_to] += token;

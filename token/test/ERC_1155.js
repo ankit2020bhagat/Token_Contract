@@ -1,16 +1,16 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("MyToken", function () {
+describe("ERC_1155", function () {
 
   let MultiTokenNFT, mytoken, owner, addr1, addr2, addr3, addrs
   // const uri1="https://bafybeihd4sxshvvk5b7wjawekvl64grqvxmocqh2l54y2qzppvdhf3enzq.ipfs.nftstorage.link/"
   before(async function () {
-    MultiTokenNFT = await ethers.getContractFactory("MyToken",);
+    MultiTokenNFT = await ethers.getContractFactory("ERC_1155");
     mytoken = await MultiTokenNFT.deploy();
     await mytoken.deployed();
     [owner, addr1, addr2, addr3, ...addrs] = await ethers.getSigners()
-    console.log(mytoken.address);
+    console.log("Conract Address: ",mytoken.address);
   });
 
   describe("Miniting and Testing", function () {
