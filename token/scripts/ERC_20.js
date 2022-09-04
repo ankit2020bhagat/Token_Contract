@@ -3,13 +3,13 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const { ethers } = require("ethers");
+
 const hre = require("hardhat");
 
 async function main() {
      const getContract= await hre.ethers.getContractFactory("ERC_20");
      const [owner,_to,spender]=await hre.ethers.getSigners();
-     const deployContract=await getContract.deploy();
+     const deployContract=await getCethersontract.deploy();
      console.log("Contract Address :",deployContract.address);
 }
 

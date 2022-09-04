@@ -13,7 +13,7 @@ contract ERC_20 {
     event Transfer(address to, address from, uint256 tokens);
     event Approve(address tokenOwner, address spender, uint256 tokens);
 
-    ///Not having enough ether
+    ///Not having enough Balance
     error insufficient();
 
     constructor() {
