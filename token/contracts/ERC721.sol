@@ -18,13 +18,18 @@ contract ERC721 {
     event Approval(address _owner, address approve, uint256 tokenId);
 
     event Approvalforall(address _owner, address operator, bool _approved);
-     
-     ///ERC721: approval to current owner
-     error sameOwner();
 
-     ///ERC721: approve caller is not token owner nor approved for all
-     error tokenOwner();
-     
+    ///ERC721: approval to current owner
+    error sameOwner();
+
+    ///ERC721: approve caller is not token owner nor approved for all
+    error tokenOwner();
+
+    ///ERC721: mint to the zero address
+    error addressZero();
+
+    ///ERC721: token already minted
+    error alreadyExists();
 
     constructor(string memory name_, string memory symbol_) {
         _name = name_;
@@ -39,9 +44,7 @@ contract ERC721 {
         return _owner[tokenId];
     }
 
-    
-
-    function approve(address _to, uint256 token_id) public  {
+    function approve(address _to, uint256 token_id) public {
         address owner = ownerOf(token_id);
 
         if (_to != owner) {
@@ -50,13 +53,13 @@ contract ERC721 {
         if (msg.sender == owner || isApprovedforAll(owner, msg.sender)) {
             revert tokenOwner();
         }
-        _approve(_to,token_id);
+        _approve(_to, token_id);
     }
 
-    function _approve(address to,uint token_id) internal {
-         _tokenApproval[token_id]=to;
+    function _approve(address to, uint256 token_id) internal {
+        _tokenApproval[token_id] = to;
 
-         emit Approval(ownerOf(token_id), to, token_id);
+        emit Approval(ownerOf(token_id), to, token_id);
     }
 
     function isApprovedforAll(address owner, address _operator)
@@ -67,35 +70,170 @@ contract ERC721 {
         return _operatorApproval[owner][_operator];
     }
 
-    function safeTranasferFrom(
+    function getApprove(uint256 token_id) public view returns (address) {
+        _requireminted(token_id);
+
+        return _tokenApproval[token_id];
+    }
+
+    function _requireminted(uint256 token_id) internal view {
+        if (_exists(token_id)) {
+            revert();
+        }
+        //require(_exists(token_id), "ERC721: invalid token ID");
+    }
+
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        return _owner[tokenId] != address(0);
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenid
+    ) public {
+        if (!isApprovedOrOwner(msg.sender, tokenid)) {
+            revert();
+        }
+        _transfer(from, to, tokenid);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public {
+        if (!(isApprovedOrOwner(msg.sender, tokenId)))
+            _safeTransferFrom(from, to, tokenId, "");
+    }
+
+    function _safeTransferFrom(
         address from,
         address to,
         uint256 tokenid,
         bytes memory data
-    ) external {
-        _safeTranasfer(from, to, tokenid, data);
+    ) internal {
+        _transfer(from, to, tokenid);
     }
 
-    function _safeTranasfer(
-        address from,
-        address to,
-        uint256 tokentid,
-        bytes memory data
-    ) internal {}
-
-    function transferfrom(
+    function _transfer(
         address from,
         address to,
         uint256 tokenid
-    ) public {}
+    ) internal {
+        if (ownerOf(tokenid) != from) {
+            revert tokenOwner();
+        }
 
-    function setApprovalForAll(address _operator, bool _approved) public {}
+        if (to == address(0)) {
+            revert();
+        }
 
-    function getApprove(uint256 tokenid) external view returns (address) {}
+        _beforeTokentransfer(from, to, tokenid);
 
-    function isApprovedForAll(address _owner, address _operator)
-        external
+        _approve(to, tokenid);
+
+        _balance[from] -= 1;
+        _balance[to] -= 1;
+        _owner[tokenid] = to;
+
+        emit Transfer(from, to, tokenid);
+
+        _afterTokenTransfer(from, to, tokenid);
+    }
+
+    function _safemint(address to, uint256 tokenid) internal virtual {
+        _safemint(to, tokenid, " ");
+    }
+
+    function _safemint(
+        address to,
+        uint256 tokenid,
+        bytes memory data
+    ) internal {
+        _mint(to, tokenid);
+    }
+
+    function _mint(address to, uint256 tokenId) internal {
+        if (to == address(0)) {
+            revert addressZero();
+        }
+        if (_exists(tokenId)) {
+            revert alreadyExists();
+        }
+        _beforeTokentransfer(address(0), to, tokenId);
+
+        _balance[to]+=1;
+
+        _owner[tokenId]=to;
+
+        emit Transfer(address(0), to, tokenId);
+
+        _afterTokenTransfer(address(0), to, tokenId);
+    }
+
+    function _beforeTokentransfer(
+        address from,
+        address to,
+        uint256 tokenid
+    ) internal {}
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenid
+    ) internal {}
+
+    function isApprovedOrOwner(address spender, uint256 tokenid)
+        public
         view
         returns (bool)
-    {}
+    {
+        address owner = ownerOf(tokenid);
+
+        return (spender == owner ||
+            isApprovedforAll(owner, spender) ||
+            getApprove(tokenid) == spender);
+    }
+
+    function setApprovalForAll(address _operator, bool _approved) public {
+
+        _setApprovalforAll(msg.sender,_operator,_approved);
+    }
+
+    function _setApprovalforAll(address owner,address _operator,bool _approved) internal{
+            if(owner==_operator){
+                revert sameOwner ();
+            }
+
+            _operatorApproval[owner][_operator]=_approved;
+
+            emit Approvalforall(owner, _operator, _approved);
+    }
+
+    function burn(uint tokenId) public {
+        if(!isApprovedOrOwner(msg.sender, tokenId)){
+            revert ();
+        }
+        _burn(tokenId);
+
+    }
+
+   function _burn(uint tokenId) internal {
+      
+      address owner = ownerOf(tokenId);
+
+      _beforeTokentransfer(owner, address(0), tokenId);
+
+      _approve(address(0), tokenId);
+
+      _balance[owner]-=1;
+
+      delete _owner[tokenId];
+
+      emit Transfer(owner, address(0), tokenId);
+
+      _afterTokenTransfer(owner, address(0), tokenId);
+   }
+
 }
