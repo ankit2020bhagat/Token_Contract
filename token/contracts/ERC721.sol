@@ -1,15 +1,24 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
+import "./library.sol";
 
 contract ERC721 {
     string private _name;
     string private _symbol;
 
-    mapping(uint256 => address) _owner;
+    address public owner;
 
-    mapping(address => uint256) _balance;
+    using Counters for Counters.Counter;
 
-    mapping(uint256 => address) _tokenApproval;
+    Counters.Counter private _tokenIdCounter;
+
+    mapping(uint256 => address) public _owner;
+
+    mapping(address => uint256) public _balance;
+
+    mapping(uint256 => address) public _tokenApproval;
+
+    uint256[] private _allTokens;
 
     mapping(address => mapping(address => bool)) _operatorApproval;
 
@@ -31,9 +40,25 @@ contract ERC721 {
     ///ERC721: token already minted
     error alreadyExists();
 
+    modifier onlyOwner() {
+        if (msg.sender != owner) {
+            revert();
+        }
+        _;
+    }
+
     constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
+        owner = msg.sender;
+    }
+
+    function Name() external view returns (string memory) {
+        return _name;
+    }
+
+    function Symbol() external view returns (string memory) {
+        return _symbol;
     }
 
     function balanceof(address owner) public view returns (uint256) {
@@ -47,10 +72,10 @@ contract ERC721 {
     function approve(address _to, uint256 token_id) public {
         address owner = ownerOf(token_id);
 
-        if (_to != owner) {
+        if (_to == owner) {
             revert sameOwner();
         }
-        if (msg.sender == owner || isApprovedforAll(owner, msg.sender)) {
+        if (msg.sender != owner || isApprovedforAll(owner, msg.sender)) {
             revert tokenOwner();
         }
         _approve(_to, token_id);
@@ -134,7 +159,7 @@ contract ERC721 {
         _approve(to, tokenid);
 
         _balance[from] -= 1;
-        _balance[to] -= 1;
+        _balance[to] += 1;
         _owner[tokenid] = to;
 
         emit Transfer(from, to, tokenid);
@@ -142,11 +167,15 @@ contract ERC721 {
         _afterTokenTransfer(from, to, tokenid);
     }
 
-    function _safemint(address to, uint256 tokenid) internal virtual {
-        _safemint(to, tokenid, " ");
+    function safeMint(address to) public onlyOwner {
+        uint256 tokenId = _tokenIdCounter.current();
+        _allTokens.push(tokenId);
+        _tokenIdCounter.increment();
+        _safeMint(to, tokenId, "");
+
     }
 
-    function _safemint(
+    function _safeMint(
         address to,
         uint256 tokenid,
         bytes memory data
@@ -163,9 +192,9 @@ contract ERC721 {
         }
         _beforeTokentransfer(address(0), to, tokenId);
 
-        _balance[to]+=1;
+        _balance[to] += 1;
 
-        _owner[tokenId]=to;
+        _owner[tokenId] = to;
 
         emit Transfer(address(0), to, tokenId);
 
@@ -197,43 +226,49 @@ contract ERC721 {
     }
 
     function setApprovalForAll(address _operator, bool _approved) public {
-
-        _setApprovalforAll(msg.sender,_operator,_approved);
+        _setApprovalforAll(msg.sender, _operator, _approved);
     }
 
-    function _setApprovalforAll(address owner,address _operator,bool _approved) internal{
-            if(owner==_operator){
-                revert sameOwner ();
-            }
+    function _setApprovalforAll(
+        address owner,
+        address _operator,
+        bool _approved
+    ) internal {
+        if (owner == _operator) {
+            revert sameOwner();
+        }
 
-            _operatorApproval[owner][_operator]=_approved;
+        _operatorApproval[owner][_operator] = _approved;
 
-            emit Approvalforall(owner, _operator, _approved);
+        emit Approvalforall(owner, _operator, _approved);
     }
 
-    function burn(uint tokenId) public {
-        if(!isApprovedOrOwner(msg.sender, tokenId)){
-            revert ();
+    function burn(uint256 tokenId) public {
+        if (!isApprovedOrOwner(msg.sender, tokenId)) {
+            revert();
         }
         _burn(tokenId);
-
     }
 
-   function _burn(uint tokenId) internal {
-      
-      address owner = ownerOf(tokenId);
+    function _burn(uint256 tokenId) internal {
+        address owner = ownerOf(tokenId);
 
-      _beforeTokentransfer(owner, address(0), tokenId);
+        _beforeTokentransfer(owner, address(0), tokenId);
 
-      _approve(address(0), tokenId);
+        _approve(address(0), tokenId);
 
-      _balance[owner]-=1;
+        _balance[owner] -= 1;
 
-      delete _owner[tokenId];
+        delete _owner[tokenId];
 
-      emit Transfer(owner, address(0), tokenId);
+        emit Transfer(owner, address(0), tokenId);
 
-      _afterTokenTransfer(owner, address(0), tokenId);
-   }
+        _afterTokenTransfer(owner, address(0), tokenId);
 
+        _allTokens.pop();
+    }
+
+    function totalSupply() public view  returns (uint256) {
+        return _allTokens.length;
+    }
 }
