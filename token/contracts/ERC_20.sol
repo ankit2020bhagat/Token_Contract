@@ -19,7 +19,7 @@ contract ERC_20 {
     constructor() {
         symbol = "QKC";
         _name = "QuikNode Coin";
-        _decimal = 2;
+        _decimal = 18;
         _totalSupply = 100000;
         balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
