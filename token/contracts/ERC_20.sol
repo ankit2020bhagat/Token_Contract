@@ -29,8 +29,8 @@ contract ERC_20 {
         return _name;
     }
 
-    function decimal() external pure returns (uint256) {
-        return 18;
+    function decimal() external view returns (uint256) {
+        return _decimal;
     }
 
     function totalSupply() external view returns (uint256) {
