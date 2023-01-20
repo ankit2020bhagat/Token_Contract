@@ -14,13 +14,13 @@ contract ERC_20 {
     event Approve(address tokenOwner, address spender, uint256 tokens);
 
     ///Not having enough Balance
-    error insufficient();
+    error insufficient_funds();
 
     constructor() {
         symbol = "QKC";
         _name = "QuikNode Coin";
         _decimal = 18;
-        _totalSupply = 100000;
+        _totalSupply = 100000 * 10 ** _decimal;
         balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
@@ -42,10 +42,10 @@ contract ERC_20 {
     }
 
     function tranfer(address _to, uint256 _amount) external returns (bool) {
-        require(
-            balances[msg.sender] >= _amount,
-            "not enough balance to transfer to address"
-        );
+        
+        if (balances[msg.sender]<_amount){
+            revert insufficient_funds();
+        }
         balances[msg.sender] -= _amount;
         balances[_to] += _amount;
         emit Transfer(msg.sender, _to, _amount);
@@ -67,18 +67,18 @@ contract ERC_20 {
     }
 
     function tranferFrom(
-        address owner,
+        address from,
         address _to,
-        uint256 token
+        uint256 _amount
     ) external returns (bool) {
         //require(balances[msg.sender] >= token,"not having enough token");
-        require(
-            _allowance[owner][msg.sender] >= token,
-            "not having enough token"
-        );
-        balances[owner] -= token;
-        _allowance[owner][msg.sender] -= token;
-        balances[_to] += token;
+       
+        if(_allowance[from][msg.sender]<_amount){
+            revert insufficient_funds();
+        }
+        balances[from] -= _amount;
+        _allowance[from][msg.sender] -= _amount;
+        balances[_to] += _amount;
         return true;
     }
 
@@ -88,7 +88,7 @@ contract ERC_20 {
 
     function _burn(address account, uint256 _amount) public {
         if (_amount >= balances[account]) {
-            revert insufficient();
+            revert insufficient_funds();
         }
         balances[account] -= _amount;
         _totalSupply -= _amount;
@@ -97,7 +97,7 @@ contract ERC_20 {
 
     function burnFrom(address owner, uint _amount) external {
         if(_amount>=_allowance[owner][msg.sender]){
-            revert insufficient();
+            revert insufficient_funds();
         }
         _allowance[owner][msg.sender]-=_amount;
         _burn(owner, _amount);
